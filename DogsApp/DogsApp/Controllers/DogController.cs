@@ -4,12 +4,15 @@ using DogsApp.Infrastructure.Data;
 using DogsApp.Infrastructure.Data.Domain;
 using DogsApp.Models.Breed;
 using DogsApp.Models.Dog;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using System.Security.Claims;
 
 namespace DogsApp.Controllers
 {
+    [Authorize]
     public class DogController : Controller
     {
         private readonly IDogService _dogService;
@@ -41,7 +44,8 @@ namespace DogsApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                var createdId = _dogService.Create(dog.Name, dog.Age, dog.BreedId, dog.Picture);
+                string currentUserId = this.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var createdId = _dogService.Create(dog.Name, dog.Age, dog.BreedId, dog.Picture,currentUserId);
                 if (createdId)
                 {
                     return RedirectToAction(nameof(Index));
@@ -135,6 +139,7 @@ namespace DogsApp.Controllers
 
         }
 
+        [AllowAnonymous]
         public IActionResult Index(string searchStringBreed, string searchStringName)
         {
 
@@ -145,7 +150,8 @@ namespace DogsApp.Controllers
                     Name = item.Name,
                     Age= item.Age,
                     BreedName= item.Breed.Name,
-                    Picture= item.Picture
+                    Picture= item.Picture,
+                    FullName = item.Owner.FirstName + " " + item.Owner.LastName
                 }).ToList();
            
             return this.View(dogs);
@@ -165,7 +171,8 @@ namespace DogsApp.Controllers
                 Name = item.Name,
                 Age = item.Age,
                 BreedName = item.Breed.Name,
-                Picture = item.Picture
+                Picture = item.Picture,
+                FullName=item.Owner.FirstName+" "+item.Owner.LastName
             };
             return View(dog);
         }
